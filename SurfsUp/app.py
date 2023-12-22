@@ -79,14 +79,10 @@ def tobs():
     tobs_list = [{"Date": date, "Temperature": tobs} for date, tobs in results]
 
     return jsonify(tobs_list)
-
-@app.route("/api/v1.0/temp_stats")
-def temperature_stats():
-    """Return min, max, and average temperatures for a given date range."""
-    # Get start_date and end_date from the database
-    start_date_query = session.query(func.min(measure.date)).scalar()
-    end_date_query = session.query(func.max(measure.date)).scalar()
-
+        
+@app.route("/api/v1.0/temp_stats/<start_date>")
+def temperature_stats_start(start_date):
+    """Return min, max, and average temperatures from the start date to the end of the dataset."""
     # Query to retrieve temperature statistics for the specified date range
     results = (
         session.query(
@@ -94,22 +90,24 @@ def temperature_stats():
             func.max(measure.tobs).label('max_temp'),
             func.avg(measure.tobs).label('avg_temp')
         )
-        .filter(measure.date >= start_date_query, measure.date <= end_date_query)
+        .filter(measure.date >= start_date)
         .first()
     )
+
     # Check if there is any result
     if results:
-        
-    # Create a dictionary with the temperature statistics
+        # Create a dictionary with the temperature statistics
         temperature_stats = {
             'min_temp': results.min_temp,
             'max_temp': results.max_temp,
             'avg_temp': results.avg_temp
         }
         return jsonify(temperature_stats)
-        
+    else:
+        return jsonify({'error': 'No data available for the specified date range'}), 404
+
 @app.route("/api/v1.0/temp_stats/<start_date>/<end_date>")
-def temperature_stats(start_date, end_date):
+def temperature_stats_range(start_date, end_date):
     """Return min, max, and average temperatures for the specified date range."""
     # Query to retrieve temperature statistics for the specified date range
     results = (
