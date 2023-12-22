@@ -31,6 +31,8 @@ def home():
         f"<a href='/api/v1.0/precipitation'>/api/v1.0/precipitation</a><br/>"
         f"<a href='/api/v1.0/stations'>/api/v1.0/stations</a><br/>"
         f"<a href='/api/v1.0/tobs'>/api/v1.0/tobs</a><br/>"
+        f"<a href='/api/v1.0/temp_stats/start_date'>/api/v1.0/temp_stats/start_date</a><br/>"
+        f"<a href='/api/v1.0/temp_stats/start_date/end_date'>/api/v1.0/temp_stats/start_date/end_date</a><br/>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -95,7 +97,7 @@ def temperature_stats_start(start_date):
     )
 
     # Check if there is any result
-    if results:
+    if results[0] is not None:
         # Create a dictionary with the temperature statistics
         temperature_stats = {
             'min_temp': results.min_temp,
@@ -116,12 +118,12 @@ def temperature_stats_range(start_date, end_date):
             func.max(measure.tobs).label('max_temp'),
             func.avg(measure.tobs).label('avg_temp')
         )
-        .filter(measure.date >= start_date, measure.date <= end_date)
+        .filter(measure.date.between(start_date, end_date))
         .first()
     )
 
     # Check if there is any result
-    if results:
+    if results[0] is not None:
         # Create a dictionary with the temperature statistics
         temperature_stats = {
             'min_temp': results.min_temp,
@@ -131,6 +133,7 @@ def temperature_stats_range(start_date, end_date):
         return jsonify(temperature_stats)
     else:
         return jsonify({'error': 'No data available for the specified date range'}), 404
+
         
 if __name__ == "__main__":
     app.run(debug=True)
