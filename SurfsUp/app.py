@@ -12,7 +12,6 @@ engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 Base = automap_base()
 Base.prepare(engine, reflect=True)
 
-
 # Create references to the necessary tables
 measure = Base.classes.measurement
 station = Base.classes.station
@@ -81,23 +80,23 @@ def tobs():
     tobs_list = [{"Date": date, "Temperature": tobs} for date, tobs in results]
 
     return jsonify(tobs_list)
-        
+
 @app.route("/api/v1.0/temp_stats/<start_date>")
-def temperature_stats_start(start_date):
-    """Return min, max, and average temperatures from the start date to the end of the dataset."""
-    # Query to retrieve temperature statistics for the specified date range
+def temperature_stats(start_date):
+    """Return min, max, and average temperatures for a single date."""
+    # Query to retrieve temperature statistics for a single date
     results = (
         session.query(
             func.min(measure.tobs).label('min_temp'),
             func.max(measure.tobs).label('max_temp'),
             func.avg(measure.tobs).label('avg_temp')
         )
-        .filter(measure.date >= start_date)
+        .filter(measure.date == start_date)
         .first()
     )
 
     # Check if there is any result
-    if results[0] is not None:
+    if results:
         # Create a dictionary with the temperature statistics
         temperature_stats = {
             'min_temp': results.min_temp,
@@ -106,7 +105,7 @@ def temperature_stats_start(start_date):
         }
         return jsonify(temperature_stats)
     else:
-        return jsonify({'error': 'No data available for the specified date range'}), 404
+        return jsonify({'error': 'No data available for the specified date'}), 404
 
 @app.route("/api/v1.0/temp_stats/<start_date>/<end_date>")
 def temperature_stats_range(start_date, end_date):
@@ -118,12 +117,12 @@ def temperature_stats_range(start_date, end_date):
             func.max(measure.tobs).label('max_temp'),
             func.avg(measure.tobs).label('avg_temp')
         )
-        .filter(measure.date.between(start_date, end_date))
+        .filter(measure.date >= start_date, measure.date <= end_date)
         .first()
     )
 
     # Check if there is any result
-    if results[0] is not None:
+    if results:
         # Create a dictionary with the temperature statistics
         temperature_stats = {
             'min_temp': results.min_temp,
@@ -134,6 +133,5 @@ def temperature_stats_range(start_date, end_date):
     else:
         return jsonify({'error': 'No data available for the specified date range'}), 404
 
-        
 if __name__ == "__main__":
     app.run(debug=True)
